@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Compras - Sentirse Bien</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .compras-container { display: grid; grid-template-columns: 1fr; gap: 30px; }
+    .registro-compra, .detalle-compra { background-color: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    #producto-select, #proveedor-select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; background-color: white; }
+    .disabled-section { opacity: 0.5; pointer-events: none; }
+    #compra-actual-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    #compra-actual-table th, #compra-actual-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    #compra-actual-table th { background-color: #003366; color: white; }
+    .total-container { text-align: right; margin-top: 20px; font-size: 1.5em; font-weight: bold; color: #003366; }
+    .status-message { text-align: center; padding: 10px; margin-top: 15px; border-radius: 5px; display: none; }
+    .status-message.success { background-color: #d4edda; color: #155724; }
+    .status-message.error { background-color: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header class="menu-header">
+    <h1>Registro de Compras</h1>
+    <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+  </header>
+
+  <div class="compras-container">
+    <div class="registro-compra">
+      <h2>1. Seleccionar Proveedor</h2>
+      <div class="form-group">
+        <label for="proveedor-select">Proveedor:</label>
+        <select id="proveedor-select" required><option value="">-- Elige un proveedor --</option></select>
+      </div>
+
+      <div id="add-product-section" class="disabled-section">
+        <h2>2. Añadir Productos a la Orden</h2>
+        <div class="form-group">
+          <label for="producto-select">Producto del Catálogo:</label>
+          <select id="producto-select"><option value="">-- Elige un producto --</option></select>
+        </div>
+        <div class="form-group">
+          <label for="cantidad">Cantidad:</label>
+          <input type="number" id="cantidad" value="1" min="1" class="form-control">
+        </div>
+        <button id="add-product-btn">Añadir a la Compra</button>
+      </div>
+    </div>
+
+    <div class="detalle-compra">
+      <h2>Detalle de la Orden de Compra</h2>
+      <table id="compra-actual-table">
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Costo Unit.</th><th>Subtotal</th></tr></thead>
+        <tbody id="compra-actual-tbody"></tbody>
+      </table>
+      <div class="total-container">
+        <span>TOTAL: Bs. </span><span id="total-compra">0.00</span>
+      </div>
+      <button id="registrar-compra-btn">Registrar Compra y Actualizar Inventario</button>
+      <div id="status-message" class="status-message"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let productosDelProveedor = [];
+    let carrito = [];
+
+    const proveedorSelect = document.getElementById('proveedor-select');
+    const addProductSection = document.getElementById('add-product-section');
+    const productoSelect = document.getElementById('producto-select');
+    const cantidadInput = document.getElementById('cantidad');
+    const addBtn = document.getElementById('add-product-btn');
+    const compraTbody = document.getElementById('compra-actual-tbody');
+    const totalSpan = document.getElementById('total-compra');
+    const registrarCompraBtn = document.getElementById('registrar-compra-btn');
+
+    fetch('../compras').then(res => res.json()).then(proveedores => {
+      proveedores.forEach(prov => {
+        proveedorSelect.appendChild(new Option(prov.nombre, prov.id));
+      });
+    });
+
+    proveedorSelect.addEventListener('change', () => {
+      const proveedorId = proveedorSelect.value;
+      carrito = [];
+      actualizarTablaCompra();
+      productoSelect.innerHTML = '<option value="">-- Elige un producto --</option>';
+
+      if (proveedorId) {
+        addProductSection.classList.remove('disabled-section');
+        fetch(`../compras?proveedorId=${proveedorId}`).then(res => res.json()).then(productos => {
+          productosDelProveedor = productos;
+          productos.forEach(p => {
+            productoSelect.appendChild(new Option(`${p.nombreProducto} (Costo: ${p.costo.toFixed(2)})`, p.id));
+          });
+        });
+      } else {
+        addProductSection.classList.add('disabled-section');
+      }
+    });
+
+    addBtn.addEventListener('click', () => {
+      const productoIdSeleccionado = productoSelect.value;
+      if (!productoIdSeleccionado) {
+        alert('Selecciona un producto del catálogo.'); return;
+      }
+      const productoSeleccionado = productosDelProveedor.find(p => p.id == productoIdSeleccionado);
+      const cantidad = parseInt(cantidadInput.value);
+
+      carrito.push({
+        nombreProducto: productoSeleccionado.nombreProducto,
+        cantidad: cantidad,
+        costoUnitario: productoSeleccionado.costo
+      });
+      actualizarTablaCompra();
+      productoSelect.value = "";
+      cantidadInput.value = 1;
+    });
+
+    function actualizarTablaCompra() {
+      compraTbody.innerHTML = '';
+      let total = 0;
+      carrito.forEach(item => {
+        const subtotal = item.cantidad * item.costoUnitario;
+        total += subtotal;
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${item.nombreProducto}</td><td>${item.cantidad}</td><td>${item.costoUnitario.toFixed(2)}</td><td>${subtotal.toFixed(2)}</td>`;
+        compraTbody.appendChild(row);
+      });
+      totalSpan.textContent = total.toFixed(2);
+    }
+
+    registrarCompraBtn.addEventListener('click', () => {
+      const proveedorId = proveedorSelect.value;
+      if (!proveedorId || carrito.length === 0) {
+        alert('Debes seleccionar un proveedor y añadir productos a la compra.'); return;
+      }
+      const datosCompra = {
+        proveedorId: parseInt(proveedorId),
+        items: carrito
+      };
+      fetch('../compras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosCompra)
+      })
+              .then(res => res.json())
+              .then(data => {
+                const statusMessage = document.getElementById('status-message');
+                statusMessage.textContent = data.message;
+                statusMessage.className = data.status === 'success' ? 'status-message success' : 'status-message error';
+                statusMessage.style.display = 'block';
+                if (data.status === 'success') {
+                  carrito = [];
+                  actualizarTablaCompra();
+                  proveedorSelect.value = "";
+                  addProductSection.classList.add('disabled-section');
+                }
+                setTimeout(() => statusMessage.style.display = 'none', 5000);
+              });
+    });
+  });
+</script>
+</body>
+</html>

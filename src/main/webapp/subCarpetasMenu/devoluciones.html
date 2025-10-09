@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devoluciones - MOTOLAND</title>
+    <link rel="stylesheet" href="../style.css">
+
+    <style>
+        .devolucion-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        #tipo-devolucion {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        .status-message {
+            text-align: center;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: none;
+            font-weight: bold;
+        }
+        .status-message.success { background-color: #d4edda; color: #155724; }
+        .status-message.error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="menu-header">
+        <h1>Procesar Devoluciones</h1>
+        <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+    </header>
+
+    <div class="devolucion-container">
+        <form id="devolucion-form">
+            <h2>Anular Transacción</h2>
+            <div class="form-group">
+                <label for="tipo-devolucion">Tipo de Transacción a Anular:</label>
+                <select id="tipo-devolucion" required>
+                    <option value="">-- Selecciona un tipo --</option>
+                    <option value="Venta">Venta</option>
+                    <option value="Compra">Compra</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="codigo-transaccion">Código de la Transacción:</label>
+                <input type="text" id="codigo-transaccion" placeholder="Ej: VENTA-101 o COMPRA-52" required>
+            </div>
+
+            <div class="form-group">
+                <label for="motivo-devolucion">Motivo de la Devolución (Opcional):</label>
+                <textarea id="motivo-devolucion" rows="3" placeholder="Ej: Producto incorrecto, cliente se arrepintió, etc."></textarea>
+            </div>
+
+            <button type="submit">Procesar Devolución</button>
+        </form>
+        <div id="status-message" class="status-message"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('devolucion-form');
+        const statusMessage = document.getElementById('status-message');
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const devolucionData = {
+                tipo: document.getElementById('tipo-devolucion').value,
+                codigo: document.getElementById('codigo-transaccion').value.trim(),
+                motivo: document.getElementById('motivo-devolucion').value
+            };
+
+            if (!devolucionData.tipo || !devolucionData.codigo) {
+                alert('Por favor, completa todos los campos requeridos.');
+                return;
+            }
+
+            // Deshabilitamos el botón para evitar doble envío
+            form.querySelector('button').disabled = true;
+
+            fetch('../devoluciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(devolucionData)
+            })
+                .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                .then(({ status, body }) => {
+                    statusMessage.textContent = body.message;
+                    if (status === 200) { // HTTP 200 OK
+                        statusMessage.className = 'status-message success';
+                        form.reset();
+                    } else { // Cualquier otro status (ej: 400 Bad Request)
+                        statusMessage.className = 'status-message error';
+                    }
+                    statusMessage.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error de conexión:', error);
+                    statusMessage.textContent = 'Error de conexión. No se pudo procesar la solicitud.';
+                    statusMessage.className = 'status-message error';
+                    statusMessage.style.display = 'block';
+                })
+                .finally(() => {
+                    // Volvemos a habilitar el botón después de 3 segundos
+                    setTimeout(() => {
+                        form.querySelector('button').disabled = false;
+                        statusMessage.style.display = 'none';
+                    }, 4000);
+                });
+        });
+    });
+</script>
+</body>
+</html>

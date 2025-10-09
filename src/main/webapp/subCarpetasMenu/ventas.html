@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Ventas - Sentirse Bien</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .ventas-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .registro-venta, .detalle-venta { background-color: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .autocomplete-container { position: relative; }
+    .results-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; }
+    .result-item { padding: 10px; cursor: pointer; display: flex; justify-content: space-between; }
+    .result-item:hover { background-color: #f0f0f0; }
+    .cantidad-input { width: 60px; text-align: center; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    .btn-quitar { background-color: var(--color-peligro); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    .btn-quitar:hover { background-color: var(--color-peligro-oscuro); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header class="menu-header">
+    <h1>Registro de Ventas</h1>
+    <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+  </header>
+
+  <div class="ventas-container">
+    <div class="registro-venta">
+      <div class="cliente-info">
+        <h2>Datos del Cliente</h2>
+        <div class="form-group autocomplete-container">
+          <label for="cliente-nombre">Nombre del Cliente:</label>
+          <input type="text" id="cliente-nombre" placeholder="Buscar cliente o registrar uno nuevo..." required>
+          <div id="cliente-results" class="results-list"></div>
+        </div>
+        <div class="form-group"><label for="cliente-nit">NIT:</label><input type="text" id="cliente-nit"></div>
+        <div class="form-group"><label for="cliente-telefono">Teléfono:</label><input type="text" id="cliente-telefono"></div>
+        <div class="form-group"><label for="cliente-email">Email:</label><input type="email" id="cliente-email"></div>
+        <div class="form-group"><label for="cliente-direccion">Dirección:</label><input type="text" id="cliente-direccion"></div>
+      </div>
+      <hr style="margin: 20px 0;">
+
+      <h2>Añadir Productos</h2>
+      <div class="form-group autocomplete-container">
+        <label for="producto-search">Buscar producto:</label>
+        <input type="text" id="producto-search" placeholder="Escriba para buscar...">
+        <div id="producto-results" class="results-list"></div>
+      </div>
+    </div>
+
+    <div class="detalle-venta">
+      <h2>Venta Actual</h2>
+      <table id="venta-actual-table">
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio U.</th><th>Subtotal</th><th>Acción</th></tr></thead>
+        <tbody id="venta-tbody"></tbody>
+      </table>
+      <div class="total-container"><h3>TOTAL: Bs. <span id="total-span">0.00</span></h3></div>
+      <button id="registrar-venta-btn">Registrar Venta</button>
+      <div id="status-message" class="status-message"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. REFERENCIAS A ELEMENTOS Y VARIABLES GLOBALES ---
+    const productoSearch = document.getElementById('producto-search');
+    const productoResults = document.getElementById('producto-results');
+    const ventaTbody = document.getElementById('venta-tbody');
+    const totalSpan = document.getElementById('total-span');
+    const registrarVentaBtn = document.getElementById('registrar-venta-btn');
+    const statusMessage = document.getElementById('status-message');
+    const clienteNombreInput = document.getElementById('cliente-nombre');
+    const clienteNitInput = document.getElementById('cliente-nit');
+    const clienteTelefonoInput = document.getElementById('cliente-telefono');
+    const clienteEmailInput = document.getElementById('cliente-email');
+    const clienteDireccionInput = document.getElementById('cliente-direccion');
+    const clienteResults = document.getElementById('cliente-results');
+
+    let allProducts = [];
+    let allClients = [];
+    let carrito = [];
+
+    // --- 2. FUNCIONES DE CARGA INICIAL (FETCH) ---
+    function cargarClientes() {
+      fetch('../clientes')
+              .then(res => res.json())
+              .then(data => { allClients = data; })
+              .catch(err => console.error("Error cargando clientes:", err));
+    }
+
+    function cargarProductos() {
+      fetch('../ventas')
+              .then(res => res.json())
+              .then(data => { allProducts = data; })
+              .catch(err => console.error("Error cargando productos:", err));
+    }
+
+    // --- 3. LÓGICA DE AUTOCOMPLETADO (CLIENTES Y PRODUCTOS) ---
+    clienteNombreInput.addEventListener('input', () => {
+      const query = clienteNombreInput.value.toLowerCase();
+      clienteResults.style.display = 'none';
+      if (query.length < 2) return;
+
+      const filteredClients = allClients.filter(c => c.nombre.toLowerCase().includes(query));
+      clienteResults.innerHTML = '';
+      if (filteredClients.length > 0) {
+        filteredClients.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          div.textContent = c.nombre;
+          div.onclick = () => seleccionarCliente(c);
+          clienteResults.appendChild(div);
+        });
+        clienteResults.style.display = 'block';
+      }
+    });
+
+    function seleccionarCliente(cliente) {
+      clienteNombreInput.value = cliente.nombre;
+      clienteNitInput.value = cliente.nit || '';
+      clienteTelefonoInput.value = cliente.telefono || '';
+      clienteEmailInput.value = cliente.email || '';
+      clienteDireccionInput.value = cliente.direccion || '';
+      clienteResults.style.display = 'none';
+    }
+
+    productoSearch.addEventListener('input', () => {
+      const query = productoSearch.value.toLowerCase();
+      productoResults.style.display = 'none';
+      if (query.length < 1) return;
+
+      const filteredProducts = allProducts.filter(p => p.nombre.toLowerCase().includes(query));
+      productoResults.innerHTML = '';
+      if (filteredProducts.length > 0) {
+        filteredProducts.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          div.innerHTML = `<span>${p.nombre}</span> <b>Stock: ${p.stock}</b>`;
+          div.onclick = () => anadirAlCarrito(p);
+          productoResults.appendChild(div);
+        });
+        productoResults.style.display = 'block';
+      }
+    });
+
+    // --- 4. LÓGICA DEL CARRITO DE VENTAS ---
+    function anadirAlCarrito(producto) {
+      const itemExistente = carrito.find(item => item.productoId === producto.id);
+      if (itemExistente) {
+        if (itemExistente.cantidad < producto.stock) {
+          itemExistente.cantidad++;
+        } else {
+          alert('¡Stock insuficiente! No puedes añadir más de este producto.');
+        }
+      } else {
+        if (producto.stock > 0) {
+          carrito.push({
+            productoId: producto.id, nombre: producto.nombre, cantidad: 1,
+            precioUnitario: producto.precioVenta, stockMax: producto.stock
+          });
+        } else {
+          alert('Este producto no tiene stock disponible.');
+        }
+      }
+      productoSearch.value = '';
+      productoResults.style.display = 'none';
+      actualizarTablaVenta();
+    }
+
+    function actualizarTablaVenta() {
+      ventaTbody.innerHTML = '';
+      let total = 0;
+      carrito.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const subtotal = item.cantidad * item.precioUnitario;
+        total += subtotal;
+        row.innerHTML = `
+                <td>${item.nombre}</td>
+                <td><input type="number" class="cantidad-input" value="${item.cantidad}" min="1" max="${item.stockMax}" data-index="${index}"></td>
+                <td>${item.precioUnitario.toFixed(2)}</td>
+                <td>${subtotal.toFixed(2)}</td>
+                <td><button class="btn-quitar" data-index="${index}">Quitar</button></td>
+            `;
+        ventaTbody.appendChild(row);
+      });
+      totalSpan.textContent = total.toFixed(2);
+    }
+
+    ventaTbody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('cantidad-input')) {
+        const index = e.target.dataset.index;
+        let nuevaCantidad = parseInt(e.target.value);
+        const item = carrito[index];
+        if (nuevaCantidad > item.stockMax) {
+          alert(`¡Stock insuficiente! Solo quedan ${item.stockMax} unidades.`);
+          nuevaCantidad = item.stockMax;
+        }
+        if (nuevaCantidad < 1) nuevaCantidad = 1;
+        item.cantidad = nuevaCantidad;
+        actualizarTablaVenta();
+      }
+    });
+
+    ventaTbody.addEventListener('click', (e) => {
+      if (e.target.classList.contains('btn-quitar')) {
+        carrito.splice(e.target.dataset.index, 1);
+        actualizarTablaVenta();
+      }
+    });
+
+    // --- 5. LÓGICA PARA REGISTRAR LA VENTA FINAL ---
+    registrarVentaBtn.addEventListener('click', () => {
+      if (carrito.length === 0 || clienteNombreInput.value.trim() === '') {
+        alert('Debes añadir productos y especificar un cliente.');
+        return;
+      }
+      const ventaData = {
+        clienteNombre: clienteNombreInput.value, clienteNit: clienteNitInput.value,
+        clienteTelefono: clienteTelefonoInput.value, clienteEmail: clienteEmailInput.value,
+        clienteDireccion: clienteDireccionInput.value,
+        items: carrito.map(item => ({ productoId: item.productoId, cantidad: item.cantidad, precioUnitario: item.precioUnitario }))
+      };
+      fetch('../ventas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ventaData)
+      })
+              .then(res => res.json())
+              .then(data => {
+                statusMessage.textContent = data.message;
+                statusMessage.className = data.status === 'success' ? 'status-message success' : 'status-message error';
+                statusMessage.style.display = 'block';
+                if (data.status === 'success') {
+                  carrito = [];
+                  actualizarTablaVenta();
+                  clienteNombreInput.value = ''; clienteNitInput.value = ''; clienteTelefonoInput.value = '';
+                  clienteEmailInput.value = ''; clienteDireccionInput.value = '';
+                  cargarProductos();
+                }
+                setTimeout(() => statusMessage.style.display = 'none', 5000);
+              })
+              .catch(err => console.error("Error al registrar la venta:", err));
+    });
+
+    // --- 6. INICIALIZACIÓN DE LA PÁGINA ---
+    cargarClientes();
+    cargarProductos();
+  });
+</script>
+</body>
+</html>

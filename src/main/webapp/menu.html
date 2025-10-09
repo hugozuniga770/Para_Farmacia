@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal - Sentirse Bien</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header class="menu-header">
+        <h1>Menú Principal</h1>
+        <button id="logout-button">Cerrar Sesión</button>
+    </header>
+
+    <div class="buttons-container">
+        <div class="button" onclick="window.location.href='subCarpetasMenu/PRODUCTOSMOTO.html'">
+            <img src="https://images.vexels.com/media/users/3/128809/isolated/preview/c67aef3d02b7b2eb9cfb953fe776d224-pila-de-cajas-de-carton.png" alt="Productos">
+            <p>Productos</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/proveedores.html'">
+            <img src="https://images.vexels.com/media/users/3/239034/isolated/preview/2011ded47041cf9ff35bb6da51dae22f-camion-2.png" alt="Proveedores">
+            <p>Proveedores</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/clientes.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/3090/3090299.png" alt="Clientes">
+            <p>Clientes</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/ventas.html'">
+            <img src="https://images.vexels.com/media/users/3/130857/isolated/preview/1c9f0d812dd86708e42d15efc9e3b08b-icono-de-signo-de-venta-colgante.png" alt="Ventas">
+            <p>Ventas</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/compras.html'">
+            <img src="https://images.vexels.com/media/users/3/132115/isolated/preview/dcaf6e695736ac3b2717a39dbe4c9a42-icono-de-carrito-de-compras-silhouett.png" alt="Compras">
+            <p>Compras</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/devoluciones.html'">
+            <img src="https://static.vecteezy.com/system/resources/previews/019/858/801/non_2x/refund-flat-color-outline-icon-free-png.png" alt="Devoluciones">
+            <p>Devoluciones</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/historial.html'">
+            <img src="https://icones.pro/wp-content/uploads/2022/03/historique-icone-de-l-historique-noir.png" alt="Historial">
+            <p>Historial</p>
+        </div>
+        <div class="button" onclick="window.location.href='subCarpetasMenu/facturacion.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/522/522575.png" alt="Facturacion">
+            <p>Facturacion</p>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+        if (!isLoggedIn) {
+            window.location.href = 'index.html';
+        }
+    });
+
+    const logoutButton = document.getElementById('logout-button');
+    logoutButton.addEventListener('click', () => {
+        sessionStorage.removeItem('isLoggedIn');
+        window.location.href = 'index.html';
+    });
+</script>
+</body>
+</html>

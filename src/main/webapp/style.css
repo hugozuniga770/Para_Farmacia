@@ -1,0 +1,173 @@
+/* --- VARIABLES DE COLOR Y FUENTE (RAÍZ) --- */
+/* Mantenemos las variables y la fuente 'Poppins' para un look de texto profesional */
+:root {
+    --color-primario: #ef6735;
+    --color-primario-oscuro: #721c24;
+    --color-acento: #ff6d00;
+    --color-peligro: #dc3545;
+    --color-peligro-oscuro: #c82333;
+    --color-texto: #343a40;
+    --radio-borde: 10px;
+    --sombra-caja: 0 8px 25px rgba(0, 0, 0, 0.1);
+    --fuente-principal: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- IMPORTACIÓN DE FUENTE MODERNA (Google Fonts) --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* --- ESTILO BASE Y FONDO --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--fuente-principal);
+    color: var(--color-texto);
+
+    /* CAMBIO: Volvemos al fondo de moto sin el overlay oscuro y con un fondo claro de respaldo */
+    background-color: #f0f2f5;
+    background-image: url('https://images.unsplash.com/photo-1621595163855-ce85e016a133?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+
+    /* MANTENEMOS ESTO: La solución para que la página se estire y funcione el scroll */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 15px;
+}
+
+/* MANTENEMOS ESTO: La regla especial para centrar la página de login */
+body.login-page-body {
+    align-items: center;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.container {
+    width: 95%;
+    max-width: 1200px;
+
+    /* CAMBIO: Volvemos al fondo blanco casi opaco, sin el efecto de vidrio */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px); /* Un desenfoque muy sutil para que el texto resalte */
+
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-caja);
+    padding: 30px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+
+/* --- EL RESTO DE ESTILOS SE MANTIENEN PORQUE SON BUENOS Y FUNCIONALES --- */
+
+/* Estilos de Formularios (Login, Proveedores, etc) */
+.login-container {
+    max-width: 450px;
+}
+h1, h2 {
+    color: var(--color-primario);
+    margin-bottom: 25px;
+    text-align: center;
+}
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], textarea, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: var(--radio-borde);
+    font-size: 16px;
+    font-family: var(--fuente-principal);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-acento);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos de Botones */
+button[type="submit"], #registrar-venta-btn, #registrar-compra-btn, #add-product-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--color-primario);
+    color: white;
+    border: none;
+    border-radius: var(--radio-borde);
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+button[type="submit"]:hover, #registrar-venta-btn:hover, #registrar-compra-btn:hover, #add-product-btn:hover {
+    background-color: var(--color-primario-oscuro);
+    transform: translateY(-2px);
+}
+button:disabled { background-color: #ccc; cursor: not-allowed; }
+.menu-header button, #generar-btn {
+    padding: 10px 20px;
+    background-color: var(--color-peligro);
+    color: white;
+    border: none;
+    border-radius: var(--radio-borde);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+.menu-header button:hover, #generar-btn:hover { background-color: var(--color-peligro-oscuro); }
+#generar-btn { background-color: var(--color-acento); margin-left: 10px; }
+
+/* Estilos del Menú */
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 20px;
+}
+.menu-header h1 { text-align: left; }
+.buttons-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 25px;
+}
+.button {
+    background: #f8f9fa; /* Un poco más claro */
+    border: 1px solid #eee;
+    border-radius: var(--radio-borde);
+    text-align: center;
+    padding: 25px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.button:hover { transform: translateY(-5px); box-shadow: var(--sombra-caja); }
+.button img { max-width: 60px; margin-bottom: 15px; }
+.button p { font-size: 1.1em; font-weight: 600; }
+
+/* Estilos de Tablas */
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+table th, table td { padding: 12px 15px; border: 1px solid #e0e0e0; text-align: left; }
+table th { background-color: var(--color-primario); color: white; font-weight: 600; }
+table tbody tr:nth-of-type(even) { background-color: #f8f8f8; }
+table tbody tr:hover { background-color: #e9ecef; }
+
+/* Estilos para Mensajes de Estado */
+.status-message {
+    text-align: center; padding: 12px; margin-top: 20px; border-radius: var(--radio-borde); display: none; font-weight: 600;
+}
+.status-message.success { background-color: #d4edda; color: #155724; }
+.status-message.error { background-color: #f8d7da; color: #721c24; }
+#error-message {
+    display: none; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; margin-top: 15px; padding: 10px; border-radius: var(--radio-borde); text-align: center;
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOTOLAND - Iniciar Sesión</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container login-container">
+    <h1>Sentirse Bien INVENTARIO</h1>
+
+    <form action="login" method="post">
+        <div class="form-group">
+            <label for="username">Usuario</label>
+            <input type="text" id="username" name="username" placeholder="Ingrese su usuario" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" placeholder="Ingrese su contraseña" required>
+        </div>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+
+</div>
+
+<script>
+    // Limpiamos cualquier sesión anterior al cargar la página de login.
+    sessionStorage.removeItem('isLoggedIn');
+
+    // Justo cuando el usuario envía el formulario, marcamos la sesión como iniciada.
+    // El servlet se encargará de redirigir a error.html si los datos son incorrectos,
+    // por lo que esta marca solo será útil si el login es exitoso.
+    document.querySelector('form').addEventListener('submit', () => {
+        sessionStorage.setItem('isLoggedIn', 'true');
+    });
+</script>
+</body>
+</html>

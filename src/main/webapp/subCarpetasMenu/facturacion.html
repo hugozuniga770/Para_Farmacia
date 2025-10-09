@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación - Sentirse Bien</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .facturacion-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .busqueda-container, .detalle-factura { background-color: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #venta-info p { margin: 10px 0; }
+        #productos-table, #items-adicionales-table, #resumen-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        #productos-table th, #productos-table td, #items-adicionales-table th, #items-adicionales-table td, #resumen-table td { padding: 10px; border: 1px solid #ddd; text-align: left;}
+        #resumen-table td:last-child { text-align: right; font-weight: bold; }
+
+        .ajustes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        #form-item-adicional { display: grid; gap: 10px; grid-template-columns: 2fr 1fr 1fr 1fr auto; align-items: center; }
+        .btn-quitar-item { background-color: var(--color-peligro); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
+        .btn-quitar-item:hover { background-color: var(--color-peligro-oscuro); }
+        .total-final {
+            font-size: 1.6em; font-weight: bold; text-align: right; margin-top: 20px; padding: 15px;
+            background-color: #343a40; color: white; border-radius: 8px;
+        }
+
+        /* --- ESTILOS DE BOTONES MEJORADOS --- */
+        #buscar-venta-btn, #btn-add-item, #generar-factura-btn {
+            background-color: var(--color-primario); /* Usamos el color principal de tu tema */
+            color: white;
+            border: none;
+            padding: 12px 25px; /* Más grandes */
+            border-radius: 8px; /* Bordes más redondeados */
+            cursor: pointer;
+            font-size: 1.1em; /* Texto un poco más grande */
+            transition: background-color 0.3s ease; /* Efecto suave al pasar el ratón */
+            width: fit-content; /* Se ajusta al contenido */
+            margin-top: 15px; /* Espacio superior */
+        }
+
+        #buscar-venta-btn:hover, #btn-add-item:hover, #generar-factura-btn:hover {
+            background-color: var(--color-secundario); /* Color más oscuro al pasar el ratón */
+        }
+
+        #generar-factura-btn {
+            width: 100%; /* El botón de generar factura ocupa todo el ancho */
+            margin-top: 30px;
+            padding: 15px 25px; /* Aún más grande */
+            font-size: 1.2em;
+        }
+
+        #generar-factura-btn:disabled {
+            background-color: #cccccc; /* Color gris cuando está deshabilitado */
+            cursor: not-allowed;
+        }
+
+        #btn-add-item {
+            padding: 10px 15px; /* Más pequeño que el de búsqueda pero más grande que el "X" */
+            font-size: 1.2em;
+            margin-top: 0; /* No necesita margen superior en el grid */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="menu-header">
+        <h1>Generar Factura</h1>
+        <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+    </header>
+
+    <div class="facturacion-container">
+        <div class="busqueda-container">
+            <h2>1. Buscar Venta</h2>
+            <div class="form-group">
+                <label for="codigo-venta-input">Código de Venta (ej: VENTA-1):</label>
+                <input type="text" id="codigo-venta-input" placeholder="Ingrese el código...">
+            </div>
+            <button id="buscar-venta-btn">Buscar</button>
+            <div id="status-message" class="status-message"></div>
+
+            <hr style="margin: 25px 0;">
+
+            <h2>2. Ajustes de Factura</h2>
+            <div class="ajustes-grid">
+                <div class="form-group">
+                    <label for="tasa-impuesto">Tasa de Impuesto (%):</label>
+                    <input type="number" id="tasa-impuesto" value="13.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="descuento-global">Descuento Global (Bs.):</label>
+                    <input type="number" id="descuento-global" value="0.00" step="0.01">
+                </div>
+            </div>
+
+            <h3>Items Adicionales (Envío, etc.)</h3>
+            <div id="form-item-adicional">
+                <input type="text" id="item-descripcion" placeholder="Descripción">
+                <input type="number" id="item-cantidad" value="1">
+                <input type="number" id="item-monto" placeholder="Monto" step="0.01">
+                <select id="item-tipo"><option value="ADICION">Añadir</option><option value="DEDUCCION">Quitar</option></select>
+                <button id="btn-add-item">+</button>
+            </div>
+            <table id="items-adicionales-table">
+                <thead><tr><th>Descripción</th><th>Monto</th><th>Acción</th></tr></thead>
+                <tbody id="items-adicionales-tbody"></tbody>
+            </table>
+        </div>
+
+        <div class="detalle-factura">
+            <h2>3. Previsualización de Factura</h2>
+            <div id="venta-info">
+                <p><strong>Código de Venta:</strong> <span id="codigo-venta-span">---</span></p>
+                <p><strong>Cliente:</strong> <span id="cliente-nombre-span">---</span></p>
+                <p><strong>NIT:</strong> <span id="cliente-nit-span">---</span></p>
+                <p><strong>Fecha:</strong> <span id="fecha-venta-span">---</span></p>
+            </div>
+
+            <h4>Productos</h4>
+            <table id="productos-table">
+                <thead><tr><th>Producto</th><th>Cant.</th><th>Precio U.</th><th>Subtotal</th></tr></thead>
+                <tbody id="productos-tbody"></tbody>
+            </table>
+
+            <h4 style="margin-top: 20px;">Cargos y Descuentos</h4>
+            <table id="resumen-table">
+                <tbody>
+                <tr><td>Subtotal Productos:</td><td id="subtotal-productos-td">0.00</td></tr>
+                <tr><td>Items Adicionales:</td><td id="total-adicionales-td">0.00</td></tr>
+                <tr><td>Descuento Global:</td><td id="descuento-global-td">0.00</td></tr>
+                <tr><td>Impuestos (<span id="tasa-impuesto-span">13.00</span>%):</td><td id="monto-impuestos-td">0.00</td></tr>
+                </tbody>
+            </table>
+            <p class="total-final">TOTAL: Bs. <span id="total-final-span">0.00</span></p>
+
+            <button id="generar-factura-btn" disabled>Generar e Imprimir Factura</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buscarVentaBtn = document.getElementById('buscar-venta-btn');
+        const codigoVentaInput = document.getElementById('codigo-venta-input');
+        const statusMessage = document.getElementById('status-message');
+        const generarFacturaBtn = document.getElementById('generar-factura-btn');
+
+        const codigoVentaSpan = document.getElementById('codigo-venta-span');
+        const clienteNombreSpan = document.getElementById('cliente-nombre-span');
+        const clienteNitSpan = document.getElementById('cliente-nit-span');
+        const fechaVentaSpan = document.getElementById('fecha-venta-span');
+        const productosTbody = document.getElementById('productos-tbody');
+
+        const tasaImpuestoInput = document.getElementById('tasa-impuesto');
+        const descuentoGlobalInput = document.getElementById('descuento-global');
+
+        const subtotalProductosTd = document.getElementById('subtotal-productos-td');
+        const totalAdicionalesTd = document.getElementById('total-adicionales-td');
+        const descuentoGlobalTd = document.getElementById('descuento-global-td');
+        const tasaImpuestoSpan = document.getElementById('tasa-impuesto-span');
+        const montoImpuestosTd = document.getElementById('monto-impuestos-td');
+        const totalFinalSpan = document.getElementById('total-final-span');
+
+        const btnAddItem = document.getElementById('btn-add-item');
+        const itemsAdicionalesTbody = document.getElementById('items-adicionales-tbody');
+
+        let currentVenta = null;
+        let itemsAdicionales = [];
+
+        buscarVentaBtn.addEventListener('click', () => {
+            const codigo = codigoVentaInput.value.trim().toUpperCase();
+            if (!codigo) {
+                alert('Por favor, ingrese un código de venta.');
+                return;
+            }
+
+            fetch(`../facturacion?codigo=${codigo}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.message); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    currentVenta = data;
+
+                    codigoVentaSpan.textContent = data.codigoVenta;
+                    clienteNombreSpan.textContent = data.clienteNombre || 'N/A';
+                    clienteNitSpan.textContent = data.clienteNit || 'N/A';
+                    fechaVentaSpan.textContent = new Date(data.fechaVenta).toLocaleString();
+
+                    productosTbody.innerHTML = '';
+                    data.productos.forEach(p => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                        <td>${p.nombre}</td>
+                        <td>${p.cantidad}</td>
+                        <td>${p.precioUnitario.toFixed(2)}</td>
+                        <td>${p.subtotal.toFixed(2)}</td>
+                    `;
+                        productosTbody.appendChild(row);
+                    });
+
+                    generarFacturaBtn.disabled = false;
+                    statusMessage.style.display = 'none';
+                    recalcularTotales();
+                })
+                .catch(error => {
+                    statusMessage.textContent = error.message;
+                    statusMessage.className = 'status-message error';
+                    statusMessage.style.display = 'block';
+                    codigoVentaSpan.textContent = '---';
+                    clienteNombreSpan.textContent = '---';
+                    clienteNitSpan.textContent = '---';
+                    fechaVentaSpan.textContent = '---';
+                    productosTbody.innerHTML = '';
+                    generarFacturaBtn.disabled = true;
+                });
+        });
+
+        function recalcularTotales() {
+            if (!currentVenta) return;
+
+            const subtotalProductos = currentVenta.productos.reduce((sum, p) => sum + p.subtotal, 0);
+            const totalAdicionales = itemsAdicionales.reduce((sum, item) => sum + (item.tipo === 'ADICION' ? item.montoUnitario * item.cantidad : -item.montoUnitario * item.cantidad), 0);
+            const descuentoGlobal = parseFloat(descuentoGlobalInput.value) || 0;
+            const tasaImpuesto = parseFloat(tasaImpuestoInput.value) || 0;
+
+            const baseImponible = subtotalProductos + totalAdicionales - descuentoGlobal;
+            const montoImpuestos = baseImponible * (tasaImpuesto / 100.0);
+            const totalFinal = baseImponible + montoImpuestos;
+
+            subtotalProductosTd.textContent = subtotalProductos.toFixed(2);
+            totalAdicionalesTd.textContent = totalAdicionales.toFixed(2);
+            descuentoGlobalTd.textContent = (-descuentoGlobal).toFixed(2);
+            tasaImpuestoSpan.textContent = tasaImpuesto.toFixed(2);
+            montoImpuestosTd.textContent = montoImpuestos.toFixed(2);
+            totalFinalSpan.textContent = totalFinal.toFixed(2);
+        }
+
+        btnAddItem.addEventListener('click', () => {
+            const descripcion = document.getElementById('item-descripcion').value;
+            const cantidad = parseInt(document.getElementById('item-cantidad').value);
+            const monto = parseFloat(document.getElementById('item-monto').value);
+            const tipo = document.getElementById('item-tipo').value;
+
+            if (descripcion && cantidad > 0 && monto > 0) {
+                itemsAdicionales.push({ descripcion, cantidad, montoUnitario: monto, tipo });
+                actualizarTablaItemsAdicionales();
+                recalcularTotales();
+                document.getElementById('item-descripcion').value = '';
+                document.getElementById('item-cantidad').value = 1;
+                document.getElementById('item-monto').value = '';
+            } else {
+                alert('Por favor, complete todos los campos del ítem.');
+            }
+        });
+
+        function actualizarTablaItemsAdicionales() {
+            itemsAdicionalesTbody.innerHTML = '';
+            itemsAdicionales.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const montoTotal = item.cantidad * item.montoUnitario * (item.tipo === 'ADICION' ? 1 : -1);
+                row.innerHTML = `
+                <td>${item.descripcion} (x${item.cantidad})</td>
+                <td>${montoTotal.toFixed(2)}</td>
+                <td><button data-index="${index}" class="btn-quitar-item">X</button></td>
+            `;
+                itemsAdicionalesTbody.appendChild(row);
+            });
+        }
+
+        itemsAdicionalesTbody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-quitar-item')) {
+                itemsAdicionales.splice(e.target.dataset.index, 1);
+                actualizarTablaItemsAdicionales();
+                recalcularTotales();
+            }
+        });
+
+        tasaImpuestoInput.addEventListener('input', recalcularTotales);
+        descuentoGlobalInput.addEventListener('input', recalcularTotales);
+
+        generarFacturaBtn.addEventListener('click', () => {
+            if (!currentVenta) return;
+            const facturaData = {
+                ventaId: currentVenta.ventaId,
+                tasaImpuesto: parseFloat(tasaImpuestoInput.value) || 0,
+                descuentoGlobal: parseFloat(descuentoGlobalInput.value) || 0,
+                itemsAdicionales: itemsAdicionales
+            };
+
+            fetch('../facturacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(facturaData)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        imprimirFactura(data.message.split(' ')[1]);
+                        window.location.reload();
+                    } else {
+                        alert(`Error: ${data.message}`);
+                    }
+                })
+                .catch(err => alert('Error de conexión al generar la factura.'));
+        });
+
+        function imprimirFactura(codigoFactura) {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Factura ' + codigoFactura + '</title>');
+            printWindow.document.write('<style>body{font-family:sans-serif;} table{width:100%; border-collapse:collapse;} td,th{padding:8px; border:1px solid #ccc;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(`<h1>Factura: ${codigoFactura}</h1>`);
+            printWindow.document.write(document.getElementById('venta-info').innerHTML);
+            printWindow.document.write('<h3>Productos</h3>');
+            printWindow.document.write(document.getElementById('productos-table').outerHTML);
+            printWindow.document.write('<h3>Resumen</h3>');
+            printWindow.document.write(document.getElementById('resumen-table').outerHTML);
+            printWindow.document.write(`<p style="font-size:1.5em; text-align:right; background:black; color:white; padding:10px;"><b>TOTAL: ${totalFinalSpan.textContent} Bs.</b></p>`);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+    });
+</script>
+</body>
+</html>

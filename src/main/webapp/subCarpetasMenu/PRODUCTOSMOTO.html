@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Productos - Sentirse Bien</title>
+    <link rel="stylesheet" href="../style.css">
+
+    <style>
+        /* Estilos específicos para esta página */
+        .inventario-container { background-color: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #inventario-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        #inventario-table th, #inventario-table td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        /* El color del encabezado de la tabla ya lo toma del style.css, pero lo dejamos por si acaso */
+        #inventario-table th { background-color: var(--color-primario); color: white; }
+
+        /* Estilos para la edición */
+        td[data-field] { cursor: pointer; }
+        td input { width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #007bff; border-radius: 4px; }
+
+        /* Estilos para el estado del producto */
+        .stock-bajo { color: #dc3545; font-weight: bold; }
+        .vencimiento-proximo { background-color: #fff3cd; }
+        .vencido { background-color: #f8d7da; color: #721c24; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+<div class="container inventario-container">
+
+    <header class="menu-header">
+        <h2>Inventario de Productos</h2>
+        <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+    </header>
+
+    <input type="text" id="search-input" placeholder="Buscar por código o nombre...">
+
+    <table id="inventario-table">
+        <thead>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Precio Venta</th>
+            <th>Stock</th>
+            <th>Ubicación</th>
+            <th>Fecha de Vencimiento</th>
+        </tr>
+        </thead>
+        <tbody id="inventario-tbody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // El script no necesita ningún cambio
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.getElementById('inventario-tbody');
+        const searchInput = document.getElementById('search-input');
+        let allProducts = [];
+
+        function renderTable(products) {
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                const row = document.createElement('tr');
+                row.dataset.id = p.id;
+                const hoy = new Date();
+                const fechaVenc = p.fechaVencimiento ? new Date(p.fechaVencimiento) : null;
+                let claseVencimiento = '';
+                if(fechaVenc){
+                    hoy.setHours(0,0,0,0);
+                    const diffTime = fechaVenc.getTime() - hoy.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) claseVencimiento = 'vencido';
+                    else if (diffDays <= 90) claseVencimiento = 'vencimiento-proximo';
+                }
+                row.className = claseVencimiento;
+                const stockClass = p.stock <= 5 ? 'stock-bajo' : 'stock-normal';
+
+                row.innerHTML = `
+                    <td>${p.codigo || 'N/A'}</td>
+                    <td data-field="nombre">${p.nombre}</td>
+                    <td data-field="precioVenta">${p.precioVenta.toFixed(2)}</td>
+                    <td data-field="stock"><span class="${stockClass}">${p.stock}</span></td>
+                    <td data-field="ubicacion">${p.ubicacion || 'Sin ubicar'}</td>
+                    <td data-field="fechaVencimiento">${p.fechaVencimiento || 'No aplica'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        tbody.addEventListener('dblclick', function(e) {
+            const cell = e.target.closest('td');
+            if (!cell || !cell.dataset.field) return;
+            if (cell.querySelector('input')) return;
+            const originalValue = cell.textContent;
+            const fieldName = cell.dataset.field;
+            const input = document.createElement('input');
+            if (fieldName === 'fechaVencimiento') {
+                input.type = 'date';
+                input.value = originalValue !== 'No aplica' ? originalValue : '';
+            } else {
+                input.type = 'text';
+                input.value = originalValue;
+            }
+            cell.innerHTML = '';
+            cell.appendChild(input);
+            input.focus();
+            const saveChanges = async () => {
+                const newValue = input.value;
+                if (newValue === originalValue) {
+                    cell.innerHTML = originalValue;
+                    if (fieldName === 'stock') {
+                        const stockClass = parseInt(newValue) <= 5 ? 'stock-bajo' : 'stock-normal';
+                        cell.innerHTML = `<span class="${stockClass}">${newValue}</span>`;
+                    }
+                    return;
+                }
+                const row = cell.closest('tr');
+                const productId = row.dataset.id;
+                const product = allProducts.find(p => p.id == productId);
+                const updatedProduct = {
+                    id: product.id,
+                    codigo: product.codigo,
+                    nombre: row.cells[1].textContent,
+                    precioVenta: parseFloat(row.cells[2].textContent),
+                    stock: parseInt(row.cells[3].textContent),
+                    ubicacion: row.cells[4].textContent,
+                    fechaVencimiento: row.cells[5].textContent
+                };
+                updatedProduct[fieldName] = newValue;
+                try {
+                    const response = await fetch('../productos', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedProduct)
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        alert(`Error: ${result.message}`);
+                        cell.textContent = originalValue;
+                    } else {
+                        cell.textContent = newValue;
+                        product[fieldName] = newValue;
+                        alert(result.message);
+                        renderTable(allProducts);
+                    }
+                } catch (error) {
+                    console.error('Error al actualizar:', error);
+                    alert('Error de conexión al intentar actualizar.');
+                    cell.textContent = originalValue;
+                }
+            };
+            input.addEventListener('blur', saveChanges);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') input.blur();
+                else if (e.key === 'Escape') cell.textContent = originalValue;
+            });
+        });
+
+        fetch('../productos')
+            .then(response => response.json())
+            .then(data => {
+                allProducts = data;
+                renderTable(allProducts);
+            })
+            .catch(error => console.error('Error al cargar inventario:', error));
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            const filteredProducts = allProducts.filter(p =>
+                (p.codigo && p.codigo.toLowerCase().includes(query)) ||
+                p.nombre.toLowerCase().includes(query)
+            );
+            renderTable(filteredProducts);
+        });
+    });
+</script>
+</body>
+</html>

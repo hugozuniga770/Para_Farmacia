@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Transacciones - MOTOLAND</title>
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    .historial-container {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #historial-table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    #historial-table th, #historial-table td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    #historial-table th {
+      background-color: #003366;
+      color: white;
+    }
+    #historial-table tbody tr:nth-of-type(even) {
+      background-color: #f2f2f2;
+    }
+    /* Colores para diferenciar los tipos de transacción */
+    .tipo-venta {
+      color: #155724; /* Verde */
+      font-weight: bold;
+    }
+    .tipo-compra {
+      color: #721c24; /* Rojo */
+      font-weight: bold;
+    }
+    .tipo-devolucion {
+      color: #ff8c00; /* Naranja */
+      font-weight: bold;
+    }
+    #search-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header class="menu-header">
+    <h1>Historial de Transacciones</h1>
+    <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+  </header>
+
+  <div class="historial-container">
+    <input type="text" id="search-input" placeholder="Buscar por tipo, código, cliente o proveedor...">
+
+    <table id="historial-table">
+      <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Código</th>
+        <th>Fecha y Hora</th>
+        <th>Detalle</th>
+        <th>Total (Bs.)</th>
+        <th>Estado</th>
+      </tr>
+      </thead>
+      <tbody id="historial-tbody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tbody = document.getElementById('historial-tbody');
+    const searchInput = document.getElementById('search-input');
+    let allTransactions = [];
+
+    function renderTable(transactions) {
+      tbody.innerHTML = '';
+      if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No se encontraron transacciones.</td></tr>';
+        return;
+      }
+
+      transactions.forEach(t => {
+        const row = document.createElement('tr');
+
+        // Lógica mejorada para asignar clase de color según el tipo
+        let tipoClass = '';
+        if (t.tipo === 'Venta') tipoClass = 'tipo-venta';
+        else if (t.tipo === 'Compra') tipoClass = 'tipo-compra';
+        else if (t.tipo === 'Devolución') tipoClass = 'tipo-devolucion';
+
+        const fecha = new Date(t.fecha).toLocaleString('es-BO');
+
+        // Si la transacción está anulada, la tachamos
+        if (t.estado === 'Anulada') {
+          row.style.textDecoration = 'line-through';
+          row.style.color = '#888';
+        }
+
+        row.innerHTML = `
+            <td><span class="${tipoClass}">${t.tipo}</span></td>
+            <td>${t.codigo || 'N/A'}</td>
+            <td>${fecha}</td>
+            <td>${t.detalle}</td>
+            <td>${t.total.toFixed(2)}</td>
+            <td><b>${t.estado}</b></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    fetch('../historial')
+            .then(response => response.json())
+            .then(data => {
+              allTransactions = data;
+              renderTable(allTransactions);
+            })
+            .catch(error => {
+              console.error('Error al cargar el historial:', error);
+              tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error al cargar los datos.</td></tr>';
+            });
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase();
+      const filteredTransactions = allTransactions.filter(t => {
+        return t.tipo.toLowerCase().includes(query) ||
+                (t.codigo && t.codigo.toLowerCase().includes(query)) ||
+                t.detalle.toLowerCase().includes(query) ||
+                t.estado.toLowerCase().includes(query);
+      });
+      renderTable(filteredTransactions);
+    });
+  });
+</script>
+</body>
+</html>

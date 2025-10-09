@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes - Sentirse Bien</title>
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    /* Los estilos no necesitan muchos cambios */
+    .lista-clientes {
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #clientes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    #clientes-table th, #clientes-table td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    #clientes-table th {
+      background-color: var(--color-primario);
+      color: white;
+    }
+    td[data-field] { cursor: pointer; }
+    td input { width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header class="menu-header">
+    <h1>Gestión de Clientes</h1>
+    <button onclick="window.location.href='../menu.html'">Volver al Menú</button>
+  </header>
+
+  <div class="lista-clientes">
+    <h2>Clientes Registrados</h2>
+    <table id="clientes-table">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>NIT</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Dirección</th>
+      </tr>
+      </thead>
+      <tbody id="clientes-tbody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tbody = document.getElementById('clientes-tbody');
+    let allClients = [];
+
+    // --- FUNCIÓN PARA CARGAR Y DIBUJAR LA TABLA (GET) ---
+    function cargarClientes() {
+      fetch('../clientes')
+              .then(response => response.json())
+              .then(data => {
+                allClients = data;
+                tbody.innerHTML = '';
+                allClients.forEach(c => {
+                  const row = document.createElement('tr');
+                  row.dataset.id = c.id;
+                  row.innerHTML = `
+                <td>${c.id}</td>
+                <td data-field="nombre">${c.nombre || ''}</td>
+                <td data-field="nit">${c.nit || ''}</td>
+                <td data-field="telefono">${c.telefono || ''}</td>
+                <td data-field="email">${c.email || ''}</td>
+                <td data-field="direccion">${c.direccion || ''}</td>
+            `;
+                  tbody.appendChild(row);
+                });
+              })
+              .catch(error => console.error('Error al cargar los clientes:', error));
+    }
+
+    // --- SE HA ELIMINADO LA LÓGICA DEL FORMULARIO DE AQUÍ ---
+
+    // --- LÓGICA PARA EDITAR CLIENTES EN LA TABLA (PUT) ---
+    tbody.addEventListener('dblclick', function(e) {
+      const cell = e.target.closest('td');
+      if (!cell || !cell.dataset.field) return;
+      if (cell.querySelector('input')) return;
+
+      const originalValue = cell.textContent;
+      const fieldName = cell.dataset.field;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = originalValue;
+      cell.innerHTML = '';
+      cell.appendChild(input);
+      input.focus();
+
+      const saveChanges = async () => {
+        const newValue = input.value;
+        if (newValue === originalValue) {
+          cell.textContent = originalValue;
+          return;
+        }
+
+        const row = cell.closest('tr');
+        const clientId = row.dataset.id;
+        const client = allClients.find(c => c.id == clientId);
+
+        const updatedClient = { ...client };
+        updatedClient[fieldName] = newValue;
+
+        try {
+          const response = await fetch('../clientes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedClient)
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(`Error: ${result.message}`);
+            cell.textContent = originalValue;
+          } else {
+            cell.textContent = newValue;
+            client[fieldName] = newValue;
+            alert(result.message);
+          }
+        } catch (error) {
+          alert('Error de conexión al intentar actualizar.');
+          cell.textContent = originalValue;
+        }
+      };
+
+      input.addEventListener('blur', saveChanges);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') cell.textContent = originalValue;
+      });
+    });
+
+    // Carga inicial de datos al abrir la página
+    cargarClientes();
+  });
+</script>
+</body>
+</html>
