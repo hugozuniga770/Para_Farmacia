@@ -1,9 +1,8 @@
 services:
   - type: web
     name: proyecto-farmacia
-    env: docker 
     plan: free
-    branch: master # OJO: Si tu rama principal se llama 'main', cambia 'master' por 'main'
+    branch: main
     buildCommand: "mvn clean install"
     startCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
     envVars:
