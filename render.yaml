@@ -1,7 +1,7 @@
 services:
   - type: web
     name: proyecto-farmacia
-    env: shell
+    env: docker 
     plan: free
     branch: master # OJO: Si tu rama principal se llama 'main', cambia 'master' por 'main'
     buildCommand: "mvn clean install"
