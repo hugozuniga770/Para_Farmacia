@@ -1,10 +1,11 @@
 services:
   - type: web
     name: proyecto-farmacia
+    env: docker
     plan: free
     branch: main
     buildCommand: "mvn clean install"
-    startCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
+    dockerCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
