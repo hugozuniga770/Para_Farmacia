@@ -3,7 +3,7 @@ services:
     name: proyecto-farmacia
     env: docker
     plan: free
-    branch: main
+    branch: maestro
     buildCommand: "mvn clean install"
     dockerCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
     envVars:
