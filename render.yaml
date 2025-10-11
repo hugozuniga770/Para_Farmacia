@@ -4,8 +4,7 @@ services:
     env: docker
     plan: free
     branch: maestro
-    buildCommand: "mvn clean install"
-    dockerCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
+    # Nota: Ya no necesitamos buildCommand ni dockerCommand aquí
     envVars:
       - key: DATABASE_URL
         fromDatabase:
