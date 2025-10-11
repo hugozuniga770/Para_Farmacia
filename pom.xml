@@ -16,13 +16,11 @@
     </properties>
 
     <dependencies>
-
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>5.0.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -30,9 +28,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.jsimone</groupId>
-            <artifactId>webapp-runner-main</artifactId>
-            <version>9.0.89.0</version>
+            <groupId>com.heroku</groupId>
+            <artifactId>webapp-runner</artifactId>
+            <version>9.0.52.1</version>
         </dependency>
 
         <dependency>
@@ -40,13 +38,11 @@
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -67,9 +63,9 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>com.github.jsimone</groupId>
-                                    <artifactId>webapp-runner-main</artifactId>
-                                    <version>9.0.89.0</version>
+                                    <groupId>com.heroku</groupId>
+                                    <artifactId>webapp-runner</artifactId>
+                                    <version>9.0.52.1</version>
                                     <destFileName>webapp-runner.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
@@ -79,5 +75,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
