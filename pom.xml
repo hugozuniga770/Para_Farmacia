@@ -31,6 +31,12 @@
             <groupId>com.heroku</groupId>
             <artifactId>webapp-runner</artifactId>
             <version>9.0.52.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.tomcat.embed</groupId>
+                    <artifactId>tomcat-embed-jasper</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
