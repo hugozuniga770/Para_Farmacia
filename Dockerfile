@@ -1,17 +1,16 @@
-# Fase 1: Construir la aplicación con Maven
+# Fase 1: Construir el JAR ejecutable con Maven
 FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 COPY . .
-RUN mvn clean install
+# Usamos 'package' para crear el JAR gordo
+RUN mvn clean package
 
-# Fase 2: Crear la imagen final para correr la aplicación
+# Fase 2: Crear la imagen final y ligera para correr la aplicación
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# Copiar el webapp-runner y el archivo .war de la fase de construcción
-COPY --from=build /app/target/dependency/webapp-runner.jar .
-COPY --from=build /app/target/*.war app.war
+# Copiar solo el JAR final que creamos en la fase anterior
+COPY --from=build /app/target/*.jar app.jar
 
-# Exponer el puerto y correr la aplicación
-EXPOSE 10000
-CMD ["java", "-jar", "webapp-runner.jar", "--port", "10000", "app.war"]
+# El comando para arrancar la aplicación
+CMD ["java", "-jar", "app.jar"]

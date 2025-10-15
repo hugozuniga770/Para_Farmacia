@@ -4,8 +4,7 @@ services:
     env: docker
     plan: free
     branch: maestro
-    buildCommand: "mvn clean package" # Usamos 'package' en lugar de 'install'
-    dockerCommand: "java -jar target/ProyectoFarmacia1-1.0-SNAPSHOT.jar"
+    # Ya no necesitamos comandos especiales. Render usará el Dockerfile.
     envVars:
       - key: DATABASE_URL
         fromDatabase:
