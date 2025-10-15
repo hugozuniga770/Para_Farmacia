@@ -4,7 +4,8 @@ services:
     env: docker
     plan: free
     branch: maestro
-    # Nota: Ya no necesitamos buildCommand ni dockerCommand aquí
+    buildCommand: "mvn clean package" # Usamos 'package' en lugar de 'install'
+    dockerCommand: "java -jar target/ProyectoFarmacia1-1.0-SNAPSHOT.jar"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
