@@ -1,10 +1,10 @@
 services:
   - type: web
     name: proyecto-farmacia
-    env: docker
     plan: free
     branch: maestro
-    # Ya no necesitamos comandos especiales. Render usará el Dockerfile.
+    buildCommand: "mvn clean package"
+    startCommand: "java -jar target/dependency/webapp-runner.jar --port $PORT target/*.war"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
