@@ -1,7 +1,6 @@
 services:
   - type: web
     name: proyecto-farmacia
-    # NO hay 'env: docker'. Render lo detectará como Java.
     plan: free
     branch: maestro
     buildCommand: "mvn clean package"
